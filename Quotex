@@ -1,0 +1,58 @@
+from telegram import Update, InlineKeyboardButton, InlineKeyboardMarkup
+from telegram.ext import ApplicationBuilder, CommandHandler, CallbackQueryHandler, ContextTypes
+
+BOT_TOKEN = '8051547152:AAFx3516WCMY4IVoYcQgdFfgCb75-SmVldQ'
+
+# Start command
+async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    user = update.effective_user
+    keyboard = [[
+        InlineKeyboardButton("Quotex", callback_data="platform_quotex"),
+        InlineKeyboardButton("Pocket Option", callback_data="platform_pocket")
+    ], [
+        InlineKeyboardButton("TradingView", callback_data="platform_tradingview")
+    ]]
+    reply_markup = InlineKeyboardMarkup(keyboard)
+    await update.message.reply_text(
+        f"Welcome {user.first_name}!\nSelect your trading platform:",
+        reply_markup=reply_markup
+    )
+
+# Callback handler
+async def button_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    query = update.callback_query
+    await query.answer()
+    data = query.data
+
+    if data.startswith("platform_"):
+        keyboard = [[
+            InlineKeyboardButton("EUR/USD", callback_data="pair_eurusd"),
+            InlineKeyboardButton("GBP/USD", callback_data="pair_gbpusd")
+        ], [
+            InlineKeyboardButton("USD/JPY", callback_data="pair_usdjpy"),
+            InlineKeyboardButton("AUD/USD", callback_data="pair_audusd")
+        ]]
+        await query.edit_message_text("Select trading pair:", reply_markup=InlineKeyboardMarkup(keyboard))
+
+    elif data.startswith("pair_"):
+        keyboard = [[
+            InlineKeyboardButton("1 Min", callback_data="time_1m"),
+            InlineKeyboardButton("2 Min", callback_data="time_2m"),
+            InlineKeyboardButton("5 Min", callback_data="time_5m")
+        ], [
+            InlineKeyboardButton("15 Min", callback_data="time_15m"),
+            InlineKeyboardButton("1 Hour", callback_data="time_1h")
+        ]]
+        await query.edit_message_text("Select trade duration:", reply_markup=InlineKeyboardMarkup(keyboard))
+
+    elif data.startswith("time_"):
+        time_frame = data.split('_')[1]
+        await query.edit_message_text(f"You selected {time_frame} timeframe.\nSignal generation will begin soon...")
+
+# Main function
+app = ApplicationBuilder().token(BOT_TOKEN).build()
+app.add_handler(CommandHandler("start", start))
+app.add_handler(CallbackQueryHandler(button_handler))
+
+print("Bot is running...")
+app.run_polling()
